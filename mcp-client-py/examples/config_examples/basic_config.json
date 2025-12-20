@@ -1,0 +1,36 @@
+{
+  "servers": {
+    "calculator": {
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "calculator_server"],
+      "env": {
+        "CALCULATOR_MODE": "advanced"
+      }
+    },
+    "web_search": {
+      "transport": "sse",
+      "url": "https://api.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${API_TOKEN}",
+        "User-Agent": "mcp-client-py/0.1.0"
+      },
+      "timeout": 30.0
+    },
+    "file_operations": {
+      "transport": "stdio",
+      "command": "uvx",
+      "args": ["file-operations-mcp"],
+      "disabled": false,
+      "auto_reconnect": true,
+      "max_retries": 3
+    }
+  },
+  "default_timeout": 30.0,
+  "max_retries": 3,
+  "log_level": "INFO",
+  "llm_provider": "openai",
+  "llm_api_key": "${OPENAI_API_KEY}",
+  "llm_model": "gpt-4",
+  "max_concurrent_connections": 10
+}

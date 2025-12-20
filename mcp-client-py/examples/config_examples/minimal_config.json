@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "simple_server": {
+      "transport": "stdio",
+      "command": "python",
+      "args": ["-m", "my_mcp_server"]
+    }
+  }
+}
