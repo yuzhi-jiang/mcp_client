@@ -1,0 +1,3 @@
+# Extend the upstream ruleset; keep project-specific suppressions explicit and narrow.
+[extend]
+useDefault = true

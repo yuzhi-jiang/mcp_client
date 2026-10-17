@@ -208,11 +208,26 @@ and partial-failure behaviour.
 - **No OAuth / mTLS.** Auth is limited to headers (Bearer tokens and similar).
 - **Tool name collisions** across servers are resolved first-wins, with a warning.
 
+## Security
+
+- **Credentials never live in the repository.** Pass them as an argument, or let the client
+  read them from the environment (`DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, or `${VAR}` /
+  `${VAR:default}` in config files). A missing key raises a clear error instead of falling
+  back to a hardcoded value.
+- `.env`, `.env.*`, `mcp_config.json`, `secrets/` and key material (`.pem`, `.key`, ...) are
+  git-ignored; only `*.example` files are tracked.
+- **`pre-commit` runs gitleaks** on staged changes (`brew install gitleaks` first), and the
+  `secret-scan` workflow scans the full history on every push.
+- If a secret does land in a commit: **rotate it at the provider first** — that is the real
+  fix — then purge the history with `git filter-repo --replace-text` and force-push. Old
+  commits stay reachable by SHA and `refs/pull/N` survives a force-push, so for a small
+  repository the reliable cleanup is to recreate it from the rewritten history.
+
 ## Development
 
 ```bash
 pip install -e ".[dev]"
-pre-commit install          # black, isort, flake8, mypy
+pre-commit install          # requires gitleaks on PATH: brew install gitleaks
 pytest
 ```
 

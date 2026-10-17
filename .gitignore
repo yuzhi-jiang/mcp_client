@@ -1,2 +1,41 @@
-venv
+# --- Secrets / local configuration (never commit) ---
+.env
+.env.*
+*.env
+!.env.example
 mcp_config.json
+mcp_config.*.json
+!mcp_config.example.json
+secrets/
+credentials*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
