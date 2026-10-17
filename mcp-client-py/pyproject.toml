@@ -9,10 +9,10 @@ description = "A Python library for connecting to Model Context Protocol servers
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
-    {name = "MCP Client Contributors", email = "contact@example.com"}
+    {name = "yuzhi", email = "yuzhi.jiang@foxmail.com"}
 ]
 maintainers = [
-    {name = "MCP Client Contributors", email = "contact@example.com"}
+    {name = "yuzhi", email = "yuzhi.jiang@foxmail.com"}
 ]
 keywords = ["mcp", "model-context-protocol", "ai", "llm", "tools"]
 classifiers = [
@@ -21,15 +21,15 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     "mcp>=1.0.0",
     "openai>=1.0.0",
@@ -64,11 +64,10 @@ examples = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-username/mcp-client-py"
-Documentation = "https://mcp-client-py.readthedocs.io"
-Repository = "https://github.com/your-username/mcp-client-py"
-Issues = "https://github.com/your-username/mcp-client-py/issues"
-Changelog = "https://github.com/your-username/mcp-client-py/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/yuzhi-jiang/mcp_client"
+Repository = "https://github.com/yuzhi-jiang/mcp_client"
+Issues = "https://github.com/yuzhi-jiang/mcp_client/issues"
+Changelog = "https://github.com/yuzhi-jiang/mcp_client/blob/main/mcp-client-py/CHANGELOG.md"
 
 [project.scripts]
 mcp-client = "mcp_client.cli:main"
@@ -83,7 +82,7 @@ mcp_client = ["py.typed"]
 
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py310']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -106,7 +105,7 @@ line_length = 88
 known_first_party = ["mcp_client"]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

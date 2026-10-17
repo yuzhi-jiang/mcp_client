@@ -6,7 +6,7 @@ from contextlib import AsyncExitStack
 from urllib.parse import urlparse
 
 from mcp.client.sse import sse_client
-from mcp.types import ReadStream, WriteStream
+from .streams import ReadStream, WriteStream
 
 from .base import BaseTransport, TransportFactory
 from ..config.models import ServerConfig

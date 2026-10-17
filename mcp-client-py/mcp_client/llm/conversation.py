@@ -166,7 +166,12 @@ class ConversationManager:
                 accumulated_content += chunk.content
             
             if chunk.tool_calls:
-                accumulated_tool_calls.extend(chunk.tool_calls)
+                # Adapters may resend the full merged set on every chunk; merge
+                # by tool-call id so partial and complete payloads both work.
+                by_id = {tc.id: tc for tc in accumulated_tool_calls}
+                for tc in chunk.tool_calls:
+                    by_id[tc.id] = tc
+                accumulated_tool_calls = list(by_id.values())
             
             # If this is the final chunk, add to conversation history
             if chunk.is_complete:

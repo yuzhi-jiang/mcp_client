@@ -8,6 +8,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Test suite under `tests/`: config/env resolution, transport validation, argument
+  validation, retry policy, tool-calling loop, streaming fragment merging, CLI, and
+  end-to-end stdio tests against a demo MCP server (`tests/mcp_demo_server.py`).
+- `docs/architecture.md`: layer map, connect/call sequences, error model, extension
+  points, and the task-affinity constraint behind sequential connect/disconnect.
+- README rewritten around verified behaviour: compatibility matrix, real test/coverage
+  numbers, and a documented list of limitations.
+
+### Fixed
+- **MCP SDK 2.x compatibility.** `ReadStream`/`WriteStream` are no longer exported from
+  `mcp.types`; they are now resolved through `mcp_client/transport/streams.py`.
+  Tool discovery read `inputSchema` and tool errors read `isError`, both renamed to
+  snake_case in SDK 2.x — tool discovery failed and tool errors were silently treated as
+  successes.
+- **Streaming tool calls were lost on the final chunk.** Tool calls were only attached to
+  chunks that carried a `delta`, so the terminating chunk (only `finish_reason`) reported
+  `tool_calls=None`. They are now merged by stream index and attached to every chunk.
+- **CancelledError / "cancel scope exited in a different task" on connect and
+  disconnect.** Sessions were created inside `asyncio.gather()` child tasks, which cannot
+  exit an anyio cancel scope, and the transport was closed before the session that reads
+  from it. Connections are now established sequentially in the caller's task and sessions
+  are closed before their transport.
+- **`NameError` masked configuration errors.** `config/manager.py` used `ValidationError`
+  without importing it, so any invalid configuration surfaced as `NameError`.
+- **Default config required environment variables.** `create_default_config()` used
+  `${API_TOKEN}` / `${OPENAI_API_KEY}` without defaults, so the shipped template failed to
+  load on a clean machine.
+- CLI printed non-text tool results with `json.dumps` on pydantic objects, which raised
+  `TypeError`; content items are now rendered according to their actual shape.
+- Replaced deprecated `asyncio.iscoroutinefunction` with `inspect.iscoroutinefunction`.
+
+### Changed
+- `requires-python` is now `>=3.10` (the MCP SDK's own floor); classifiers updated and
+  stale `your-username` project URLs corrected.
+- Early structural smoke tests moved to `tests/legacy/`.
+
+### Added (existing)
 - Initial release of MCP Client library
 - Multi-server connection management
 - Tool discovery and execution

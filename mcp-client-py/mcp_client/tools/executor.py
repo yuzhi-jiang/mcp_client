@@ -96,7 +96,11 @@ class ToolExecutor:
             # Convert MCP result to our ToolResult format
             result = ToolResult(
                 content=mcp_result.content,
-                is_error=mcp_result.isError if hasattr(mcp_result, 'isError') else False
+                # mcp 1.x uses camelCase, mcp 2.x uses snake_case
+                is_error=bool(
+                    getattr(mcp_result, "isError", False)
+                    or getattr(mcp_result, "is_error", False)
+                ),
             )
             
             # Check if the result indicates an error

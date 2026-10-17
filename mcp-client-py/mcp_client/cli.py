@@ -70,6 +70,26 @@ def list_tools(ctx):
     asyncio.run(_list_tools())
 
 
+def _render_content_item(item: Any) -> str:
+    """Render one tool-result content item for terminal output.
+
+    mcp 1.x returns plain dicts, mcp 2.x returns pydantic content objects, so
+    both shapes have to be handled or ``json.dumps`` raises TypeError.
+    """
+    if isinstance(item, dict):
+        if item.get("type") == "text":
+            return str(item.get("text", ""))
+        return json.dumps(item, indent=2, ensure_ascii=False, default=str)
+
+    if getattr(item, "type", None) == "text" and hasattr(item, "text"):
+        return str(item.text)
+
+    if hasattr(item, "model_dump"):
+        return json.dumps(item.model_dump(), indent=2, ensure_ascii=False, default=str)
+
+    return str(item)
+
+
 @cli.command()
 @click.argument('tool_name')
 @click.argument('arguments', required=False)
@@ -103,10 +123,7 @@ def call_tool(ctx, tool_name: str, arguments: Optional[str]):
                 click.echo(f"Tool '{tool_name}' executed successfully:")
                 if result.content:
                     for item in result.content:
-                        if isinstance(item, dict) and item.get('type') == 'text':
-                            click.echo(item.get('text', ''))
-                        else:
-                            click.echo(json.dumps(item, indent=2))
+                        click.echo(_render_content_item(item))
                             
         except Exception as e:
             click.echo(f"Error: {e}", err=True)

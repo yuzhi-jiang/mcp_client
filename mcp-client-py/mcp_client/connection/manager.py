@@ -33,6 +33,7 @@ class ConnectionManager:
         self._sessions: Dict[str, ClientSession] = {}
         self._transports: Dict[str, TransportInterface] = {}
         self._exit_stack = AsyncExitStack()
+        self._session_stacks: Dict[str, AsyncExitStack] = {}
         self._connection_locks: Dict[str, asyncio.Lock] = {}
         self._health_check_tasks: Dict[str, asyncio.Task] = {}
         self._is_shutdown = False
@@ -59,23 +60,17 @@ class ConnectionManager:
         
         logger.info(f"Connecting to {len(enabled_servers)} servers: {enabled_servers}")
         
-        # Create connection tasks for all servers
-        connection_tasks = []
-        for server_name in enabled_servers:
-            task = asyncio.create_task(
-                self._connect_server_with_retry(server_name),
-                name=f"connect_{server_name}"
-            )
-            connection_tasks.append(task)
-        
-        # Wait for all connection attempts to complete
-        results = await asyncio.gather(*connection_tasks, return_exceptions=True)
-        
-        # Check results and log any failures
+        # Connect sequentially instead of with asyncio.gather: an MCP
+        # ClientSession enters an anyio task group bound to the task that
+        # created it, so a session opened inside a gathered child task cannot be
+        # closed from the caller's task ("cancel scope exited in a different
+        # task"). Sequential setup keeps every session owned by this task.
         successful_connections = 0
-        for server_name, result in zip(enabled_servers, results):
-            if isinstance(result, Exception):
-                logger.error(f"Failed to connect to server '{server_name}': {result}")
+        for server_name in enabled_servers:
+            try:
+                await self._connect_server_with_retry(server_name)
+            except Exception as exc:
+                logger.error(f"Failed to connect to server '{server_name}': {exc}")
             else:
                 successful_connections += 1
                 logger.info(f"Successfully connected to server '{server_name}'")
@@ -155,17 +150,14 @@ class ConnectionManager:
             await asyncio.gather(*self._health_check_tasks.values(), return_exceptions=True)
         self._health_check_tasks.clear()
         
-        # Disconnect from all servers
-        disconnect_tasks = []
+        # Disconnect sequentially for the same task-affinity reason as
+        # connect_all(): the session's anyio task group must be exited by the
+        # task that entered it.
         for server_name in list(self._sessions.keys()):
-            task = asyncio.create_task(
-                self._disconnect_server_internal(server_name),
-                name=f"disconnect_{server_name}"
-            )
-            disconnect_tasks.append(task)
-        
-        if disconnect_tasks:
-            await asyncio.gather(*disconnect_tasks, return_exceptions=True)
+            try:
+                await self._disconnect_server_internal(server_name)
+            except Exception as exc:
+                logger.error(f"Failed to disconnect from server '{server_name}': {exc}")
         
         # Clean up exit stack
         await self._exit_stack.aclose()
@@ -275,7 +267,11 @@ class ConnectionManager:
             session = ClientSession(read_stream, write_stream, **session_kwargs)
             
             # Register session with exit stack for cleanup
-            session = await self._exit_stack.enter_async_context(session)
+            # Each session gets its own exit stack so it can be closed before
+            # the transport that feeds it (see _disconnect_server_internal).
+            session_stack = AsyncExitStack()
+            self._session_stacks[server_name] = session_stack
+            session = await session_stack.enter_async_context(session)
             
             # Initialize the session
             await session.initialize()
@@ -331,6 +327,16 @@ class ConnectionManager:
         if server_name in self._sessions:
             del self._sessions[server_name]
         
+        # Exit the session before closing the streams it reads from: closing
+        # the transport first cancels the session's reader task and the anyio
+        # cancel scope then propagates CancelledError into the caller.
+        session_stack = self._session_stacks.pop(server_name, None)
+        if session_stack is not None:
+            try:
+                await session_stack.aclose()
+            except Exception as e:
+                logger.warning(f"Error closing session for '{server_name}': {e}")
+
         # Disconnect transport
         if server_name in self._transports:
             try:

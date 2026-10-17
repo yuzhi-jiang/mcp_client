@@ -115,8 +115,11 @@ class ToolManager:
             for mcp_tool in response.tools:
                 tool = Tool(
                     name=mcp_tool.name,
-                    description=mcp_tool.description,
-                    input_schema=mcp_tool.inputSchema,
+                    description=mcp_tool.description or "",
+                    # mcp 1.x exposes camelCase, mcp 2.x uses snake_case
+                    input_schema=getattr(mcp_tool, "input_schema", None)
+                    or getattr(mcp_tool, "inputSchema", None)
+                    or {},
                     server_name=server_name
                 )
                 tools.append(tool)

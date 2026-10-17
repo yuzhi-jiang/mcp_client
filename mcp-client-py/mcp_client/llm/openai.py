@@ -212,11 +212,11 @@ class OpenAIAdapter(LLMAdapterInterface):
                 content_chunk = delta.content
                 accumulated_content += content_chunk
             
-            # Handle tool calls
-            tool_calls_chunk = None
+            # Handle tool calls: merge fragments by index, then expose the
+            # accumulated set on every chunk. The final chunk of a stream only
+            # carries finish_reason, so building the list solely from
+            # `delta.tool_calls` would drop the calls merged so far.
             if delta.tool_calls:
-                tool_calls_chunk = []
-                
                 for tc in delta.tool_calls:
                     tc_index = tc.index
                     
@@ -241,23 +241,8 @@ class OpenAIAdapter(LLMAdapterInterface):
                             accumulated_tool_calls[tc_index]["function"]["name"] = tc.function.name
                         if tc.function.arguments:
                             accumulated_tool_calls[tc_index]["function"]["arguments"] += tc.function.arguments
-                
-                # Convert to ToolCall objects for this chunk
-                if accumulated_tool_calls:
-                    tool_calls_chunk = []
-                    for tc_data in accumulated_tool_calls.values():
-                        if tc_data["function"]["name"]:  # Only include if we have a name
-                            try:
-                                arguments = json.loads(tc_data["function"]["arguments"]) if tc_data["function"]["arguments"] else {}
-                            except json.JSONDecodeError:
-                                arguments = {}
-                            
-                            tool_call = ToolCall(
-                                id=tc_data["id"],
-                                name=tc_data["function"]["name"],
-                                arguments=arguments
-                            )
-                            tool_calls_chunk.append(tool_call)
+            
+            tool_calls_chunk = self._build_tool_calls(accumulated_tool_calls)
             
             # Check if this is the final chunk
             is_complete = choice.finish_reason is not None
@@ -272,6 +257,38 @@ class OpenAIAdapter(LLMAdapterInterface):
             if is_complete:
                 break
     
+    @staticmethod
+    def _build_tool_calls(
+        accumulated_tool_calls: Dict[int, Dict[str, Any]]
+    ) -> Optional[List[ToolCall]]:
+        """Convert merged streaming fragments into complete ToolCall objects.
+
+        Args:
+            accumulated_tool_calls: Partial tool calls keyed by stream index
+
+        Returns:
+            ToolCall list, or None when no complete call is available yet
+        """
+        tool_calls: List[ToolCall] = []
+        for tc_data in accumulated_tool_calls.values():
+            if not tc_data["function"]["name"]:
+                # The name arrives in the first fragment; skip incomplete slots
+                continue
+            raw_arguments = tc_data["function"]["arguments"]
+            try:
+                arguments = json.loads(raw_arguments) if raw_arguments else {}
+            except json.JSONDecodeError:
+                # Arguments are still streaming in; surface an empty dict
+                arguments = {}
+            tool_calls.append(
+                ToolCall(
+                    id=tc_data["id"],
+                    name=tc_data["function"]["name"],
+                    arguments=arguments,
+                )
+            )
+        return tool_calls or None
+
     def format_tools(self, tools: List[Tool]) -> List[Dict[str, Any]]:
         """Format tools for OpenAI API.
         

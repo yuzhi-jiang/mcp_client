@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Tuple
 
 
-from mcp.types import ReadStream, WriteStream
+from .streams import ReadStream, WriteStream
 
 from ..config.models import ServerConfig
 from ..exceptions import ConnectionError, ValidationError

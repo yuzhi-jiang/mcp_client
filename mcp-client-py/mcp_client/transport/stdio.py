@@ -7,7 +7,7 @@ from contextlib import AsyncExitStack
 
 from mcp import StdioServerParameters
 from mcp.client.stdio import stdio_client
-from mcp.types import ReadStream, WriteStream
+from .streams import ReadStream, WriteStream
 
 from .base import BaseTransport, TransportFactory
 from ..config.models import ServerConfig

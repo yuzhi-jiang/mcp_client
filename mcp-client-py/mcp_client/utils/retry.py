@@ -1,6 +1,7 @@
 """Retry utilities for MCP Client."""
 
 import asyncio
+import inspect
 import logging
 import random
 from functools import wraps
@@ -168,7 +169,7 @@ class RetryPolicy:
         
         for attempt in range(self.max_retries + 1):
             try:
-                if asyncio.iscoroutinefunction(func):
+                if inspect.iscoroutinefunction(func):
                     return await func(*args, **kwargs)
                 else:
                     return func(*args, **kwargs)

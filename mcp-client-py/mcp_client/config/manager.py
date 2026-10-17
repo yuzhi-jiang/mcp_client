@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, Union
 
 from .models import Config
 from .validator import ConfigValidator
-from ..exceptions import ConfigurationError
+from ..exceptions import ConfigurationError, ValidationError
 
 
 class ConfigManager:
@@ -287,7 +287,7 @@ class ConfigManager:
                     "transport": "sse",
                     "url": "https://api.example.com/mcp",
                     "headers": {
-                        "Authorization": "Bearer ${API_TOKEN}"
+                        "Authorization": "Bearer ${API_TOKEN:}"
                     },
                     "timeout": 30.0,
                     "disabled": True
@@ -297,7 +297,7 @@ class ConfigManager:
             "max_retries": 3,
             "log_level": "INFO",
             "llm_provider": "openai",
-            "llm_api_key": "${OPENAI_API_KEY}",
+            "llm_api_key": "${OPENAI_API_KEY:}",
             "llm_model": "gpt-4",
             "max_concurrent_connections": 10,
             "connection_pool_size": 5
