@@ -64,7 +64,7 @@ class MultiMCPClient:
     
     def __init__(self, 
                  config_path: str = DEFAULT_CONFIG_PATH,
-                 llm_api_key: Optional[str] = "REDACTED-ROTATE-ME",
+                 llm_api_key: Optional[str] = None,
                  llm_base_url: Optional[str] = "https://api.deepseek.com",
                  llm_model: str = "deepseek-chat"):
         """Initialize a MultiMCPClient with configurations from a JSON file.
@@ -80,9 +80,14 @@ class MultiMCPClient:
         self.sessions: Dict[str, ClientSession] = {}
         self.server_name_to_tools: Dict[str, List[BaseTool]] = {}
         
-        # LLM client setup
+        # LLM client setup — never hardcode credentials in source.
+        resolved_api_key = llm_api_key or os.getenv("DEEPSEEK_API_KEY")
+        if not resolved_api_key:
+            raise ValueError(
+                "Missing API key: pass llm_api_key or set the DEEPSEEK_API_KEY environment variable"
+            )
         self.llm_client = OpenAI(
-            api_key=llm_api_key,
+            api_key=resolved_api_key,
             base_url=llm_base_url,
         )
         self.llm_model = llm_model
