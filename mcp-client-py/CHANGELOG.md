@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README rewritten around verified behaviour: compatibility matrix, real test/coverage
   numbers, and a documented list of limitations.
 
+### Security
+- Removed a hardcoded DeepSeek API key that had been used as a default argument in
+  `mcp_client.py`. The client now reads `DEEPSEEK_API_KEY` (or an explicit
+  `llm_api_key`) and raises a clear error when neither is set. The key was also purged
+  from the git history with `git filter-repo`; it must still be revoked at the provider,
+  since the old commit remained fetchable by SHA and any clone/fork keeps a copy.
+
 ### Fixed
 - **MCP SDK 2.x compatibility.** `ReadStream`/`WriteStream` are no longer exported from
   `mcp.types`; they are now resolved through `mcp_client/transport/streams.py`.
